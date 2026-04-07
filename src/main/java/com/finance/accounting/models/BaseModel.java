@@ -1,4 +1,4 @@
-package com.finance.accounting.model;  
+package com.finance.accounting.models;
 
 import java.time.LocalDateTime;
 
