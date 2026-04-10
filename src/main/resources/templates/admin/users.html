@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/admin-shell :: layout(${pageTitle}, ~{::page-main})}">
+<body>
+<th:block th:fragment="page-main">
+  <h1 class="page-title">Users</h1>
+  <p class="page-sub">Administrator · Setup — user accounts (CMFS layout: list + entry).</p>
+
+  <div class="toolbar">
+    <input class="input-dark" type="search" name="q" placeholder="Enter keyword to search" aria-label="Search users"/>
+    <select class="select-dark" name="filter" aria-label="Filter">
+      <option value="all">All</option>
+    </select>
+    <button type="button" class="btn btn-ghost">Search</button>
+  </div>
+
+  <div class="grid-cards">
+    <div class="card">
+      <div class="card-label">List</div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+          <tr>
+            <th>User ID</th>
+            <th>User name</th>
+            <th>Full name</th>
+            <th>Role</th>
+            <th>Job description</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td class="cell-muted">—</td>
+            <td class="cell-muted">—</td>
+            <td class="cell-muted">—</td>
+            <td class="cell-muted">—</td>
+            <td class="cell-muted">—</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar" aria-label="Pagination">
+        <button type="button" class="page-btn active">1</button>
+        <button type="button" class="page-btn">2</button>
+        <button type="button" class="page-btn">3</button>
+      </div>
+    </div>
+
+
+    <div class="card">
+      <div class="card-label">Entry</div>
+      <form id="user-entry-form" class="form-grid form-grid-wide" action="#" method="post" th:action="@{/admin/setup/users}" onsubmit="return false;">
+        <label class="field-label" for="user-id">User ID</label>
+        <div>
+          <input class="input-dark" id="user-id" name="userId" type="text" value="Auto generated" readonly aria-readonly="true"/>
+          <div class="field-hint">System-generated on save</div>
+        </div>
+
+        <label class="field-label" for="user-location">User location</label>
+        <input class="input-dark" id="user-location" name="userLocation" type="text" autocomplete="organization" placeholder="Branch / office"/>
+
+        <label class="field-label" for="user-role">User role</label>
+        <select class="select-dark" id="user-role" name="roleId" aria-label="User role">
+          <option value="">— Select role —</option>
+          <option value="1">Administrator</option>
+          <option value="2">Manager</option>
+          <option value="3">Accountant</option>
+          <option value="4">BOOKING</option>
+        </select>
+
+        <label class="field-label" for="expiry-date">Expiry date</label>
+        <div>
+          <input class="input-dark" id="expiry-date" name="expiryDate" type="date"/>
+          <div class="field-hint">Display format on legacy CMFS: DD/MM/YYYY</div>
+        </div>
+
+        <label class="field-label" for="username">User name</label>
+        <input class="input-dark" id="username" name="username" type="text" required autocomplete="username" placeholder="Login name"/>
+
+        <label class="field-label" for="full-name">Full name</label>
+        <input class="input-dark" id="full-name" name="fullName" type="text" required autocomplete="name"/>
+
+        <label class="field-label" for="job-description">Job description</label>
+        <input class="input-dark" id="job-description" name="jobDescription" type="text" placeholder="e.g. Marketing"/>
+
+        <label class="field-label" for="password">Password</label>
+        <input class="input-dark" id="password" name="password" type="password" autocomplete="new-password" placeholder="Leave blank to keep unchanged on update"/>
+
+        <label class="field-label" for="amount-limit">Amount limit</label>
+        <input class="input-dark" id="amount-limit" name="amountLimit" type="number" inputmode="decimal" step="0.0001" min="0" placeholder="0.0000"/>
+
+        <label class="field-label" for="voucher-reversal">Voucher reversal</label>
+        <select class="select-dark" id="voucher-reversal" name="voucherReversalAllowed">
+          <option value="false">No</option>
+          <option value="true">Yes</option>
+        </select>
+
+        <label class="field-label" for="posted-maintenance-edit">Posted maintenance edit allow</label>
+        <select class="select-dark" id="posted-maintenance-edit" name="postedMaintenanceEditAllowed">
+          <option value="false">No</option>
+          <option value="true">Yes</option>
+        </select>
+
+        <label class="field-label" for="old-rate-booking">Allow old rate in booking</label>
+        <select class="select-dark" id="old-rate-booking" name="allowOldRateInBooking">
+          <option value="false">No</option>
+          <option value="true">Yes</option>
+        </select>
+
+        <label class="field-label" for="active">Active</label>
+        <div class="checkbox-field">
+          <input id="active" name="active" type="checkbox" value="true" checked/>
+          <span style="font-size:0.85rem;color:var(--text-muted)">Account enabled</span>
+        </div>
+
+        <label class="field-label" for="email">Email</label>
+        <input class="input-dark" id="email" name="email" type="email" autocomplete="email" placeholder="optional"/>
+
+        <label class="field-label" for="user-code">User code</label>
+        <input class="input-dark" id="user-code" name="userCode" type="text" maxlength="32" placeholder="e.g. 007"/>
+
+        <label class="field-label" for="signature">Signature</label>
+        <div>
+          <div class="file-drop">
+            <span>Drop file here or choose a file</span>
+            <label>
+              <span class="btn btn-ghost" style="height:auto;padding:0.45rem 0.85rem;display:inline-block;cursor:pointer">Select file</span>
+              <input class="input-file-hidden" id="signature" name="signature" type="file" accept="image/*,.pdf"/>
+            </label>
+          </div>
+        </div>
+      </form>
+
+      <div class="toolbar" style="margin-top:1.25rem;margin-bottom:0">
+        <button type="submit" form="user-entry-form" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-ghost">Update</button>
+        <button type="button" class="btn btn-ghost">Delete</button>
+        <button type="reset" form="user-entry-form" class="btn btn-ghost">Reset</button>
+      </div>
+    </div>
+  </div>
+</th:block>
+</body>
+</html>

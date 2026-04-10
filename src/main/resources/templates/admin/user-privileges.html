@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/admin-shell :: layout(${pageTitle}, ~{::page-main})}">
+<body>
+<th:block th:fragment="page-main">
+  <h1 class="page-title">User Privileges</h1>
+  <p class="page-sub">Administrator · Security — role × module matrix (View / Insert / Update / Delete).</p>
+
+  <form id="privileges-form" action="#" method="post" th:action="@{/admin/security/user-privileges}" onsubmit="return false;">
+    <div class="toolbar">
+      <input class="input-dark" type="search" name="q" placeholder="Enter keyword to search" aria-label="Search"/>
+      <select class="select-dark" name="filter" aria-label="Filter">
+        <option value="all">All</option>
+      </select>
+      <button type="button" class="btn btn-ghost">Search</button>
+      <label class="field-label" for="priv-role" style="text-align:left;margin:0">User role</label>
+      <select class="select-dark" id="priv-role" name="roleId" aria-label="User role">
+        <option value="">— Select role —</option>
+        <option value="1">Accountant V.</option>
+        <option value="2">Administrator</option>
+        <option value="3">BOOKING</option>
+        <option value="4">Manager</option>
+      </select>
+    </div>
+
+    <div class="card card-wide" style="margin-bottom:1rem">
+      <div class="card-label">Privileges</div>
+      <div class="table-wrap">
+        <table class="data-table privilege-table">
+          <thead>
+          <tr>
+            <th class="col-path">Menu location</th>
+            <th class="col-form">Form name</th>
+            <th class="col-flag">View</th>
+            <th class="col-flag">Insert</th>
+            <th class="col-flag">Update</th>
+            <th class="col-flag">Delete</th>
+          </tr>
+          </thead>
+          <tbody>
+          <!-- Setup » Project -->
+          <tr>
+            <td class="col-path">Setup » Project</td>
+            <td class="col-form">Project</td>
+            <td class="col-flag"><input type="checkbox" name="p_1_v" aria-label="Project — View"/></td>
+            <td class="col-flag"><input type="checkbox" name="p_1_i" aria-label="Project — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" name="p_1_u" aria-label="Project — Update"/></td>
+            <td class="col-flag"><input type="checkbox" name="p_1_d" aria-label="Project — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Project</td>
+            <td class="col-form">Plot types</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot types — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot types — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot types — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot types — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Project</td>
+            <td class="col-form">Plot types entry</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot types entry — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot types entry — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot types entry — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot types entry — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Project</td>
+            <td class="col-form">Plot detail</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot detail — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot detail — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot detail — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot detail — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Project</td>
+            <td class="col-form">Classifications</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Classifications — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Classifications — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Classifications — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Classifications — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Project</td>
+            <td class="col-form">Project detail upload</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Project detail upload — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Project detail upload — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Project detail upload — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Project detail upload — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Project</td>
+            <td class="col-form">Project detail update</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Project detail update — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Project detail update — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Project detail update — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Project detail update — Delete"/></td>
+          </tr>
+          <!-- Setup » Banking -->
+          <tr>
+            <td class="col-path">Setup » Banking</td>
+            <td class="col-form">Banks</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Banks — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Banks — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Banks — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Banks — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Banking</td>
+            <td class="col-form">Bank branch</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Bank branch — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Bank branch — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Bank branch — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Bank branch — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Banking</td>
+            <td class="col-form">Cheque book</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Cheque book — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Cheque book — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Cheque book — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Cheque book — Delete"/></td>
+          </tr>
+          <!-- Accounting / GL setup -->
+          <tr>
+            <td class="col-path">Setup » Accounting</td>
+            <td class="col-form">Voucher type</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher type — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher type — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher type — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher type — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Accounting</td>
+            <td class="col-form">Chart of account</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Chart of account — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Chart of account — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Chart of account — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Chart of account — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Accounting</td>
+            <td class="col-form">Cost center</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Cost center — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Cost center — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Cost center — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Cost center — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Accounting</td>
+            <td class="col-form">Opening balance</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Opening balance — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Opening balance — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Opening balance — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Opening balance — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Accounting</td>
+            <td class="col-form">Application setup</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Application setup — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Application setup — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Application setup — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Application setup — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup » Accounting</td>
+            <td class="col-form">Yearly closing</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Yearly closing — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Yearly closing — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Yearly closing — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Yearly closing — Delete"/></td>
+          </tr>
+          <!-- Customer -->
+          <tr>
+            <td class="col-path">Setup » Customer &amp; agent setup</td>
+            <td class="col-form">Customers</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Customers — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Customers — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Customers — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Customers — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Setup</td>
+            <td class="col-form">Notifications</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Notifications — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Notifications — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Notifications — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Notifications — Delete"/></td>
+          </tr>
+          <!-- Transactions (sample) -->
+          <tr>
+            <td class="col-path">Transactions » Booking</td>
+            <td class="col-form">Booking</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Booking — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Booking — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Booking — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Booking — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Transactions » Booking</td>
+            <td class="col-form">Plot transfer</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot transfer — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot transfer — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot transfer — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Plot transfer — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Transactions » Vouchers</td>
+            <td class="col-form">Voucher entry</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher entry — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher entry — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher entry — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher entry — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Transactions » Vouchers</td>
+            <td class="col-form">Voucher posting</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher posting — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher posting — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher posting — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Voucher posting — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Transactions » Bank</td>
+            <td class="col-form">Bank reconciliation</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Bank reconciliation — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Bank reconciliation — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Bank reconciliation — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Bank reconciliation — Delete"/></td>
+          </tr>
+          <tr>
+            <td class="col-path">Transactions » Collection</td>
+            <td class="col-form">Collection entry</td>
+            <td class="col-flag"><input type="checkbox" aria-label="Collection entry — View"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Collection entry — Insert"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Collection entry — Update"/></td>
+            <td class="col-flag"><input type="checkbox" aria-label="Collection entry — Delete"/></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="toolbar" style="margin-bottom:0">
+      <button type="submit" class="btn btn-primary">Show</button>
+      <button type="button" class="btn btn-ghost">Update</button>
+      <button type="button" class="btn btn-ghost">Delete</button>
+      <button type="reset" class="btn btn-ghost">Reset</button>
+    </div>
+  </form>
+</th:block>
+</body>
+</html>
