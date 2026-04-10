@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/admin-shell :: layout(${pageTitle}, ~{::page-main})}">
+<body>
+<th:block th:fragment="page-main">
+  <h1 class="page-title">User Location</h1>
+  <p class="page-sub">Administrator · Setup — map users to locations (list + entry).</p>
+
+  <div class="toolbar">
+    <input class="input-dark" type="search" name="q" placeholder="Enter keyword to search" aria-label="Search"/>
+    <select class="select-dark" name="filter" aria-label="Filter">
+      <option value="all">All</option>
+    </select>
+    <button type="button" class="btn btn-ghost">Search</button>
+  </div>
+
+  <div class="grid-cards">
+    <div class="card">
+      <div class="card-label">Entry</div>
+      <form id="user-location-form" class="form-grid form-grid-wide" action="#" method="post" th:action="@{/admin/setup/user-locations}" onsubmit="return false;">
+        <label class="field-label" for="ul-user">User</label>
+        <div>
+          <div class="inline-fields">
+            <input class="input-dark" id="ul-user" name="userSearch" type="text" placeholder="Search user" autocomplete="off"/>
+            <input class="input-dark input-compact" id="ul-user-code" name="userCode" type="text" placeholder="Code" maxlength="32" aria-label="User code"/>
+          </div>
+          <div class="field-hint" style="margin-top:0.35rem">Pick user (login or name); short code beside field as on CMFS.</div>
+        </div>
+      </form>
+      <div class="toolbar" style="margin-top:1rem;margin-bottom:0">
+        <button type="submit" form="user-location-form" class="btn btn-primary">Save</button>
+        <button type="reset" form="user-location-form" class="btn btn-ghost">Reset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Locations</div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+          <tr>
+            <th style="width:48px;text-align:center">
+              <label class="cell-muted" style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;font-weight:600;cursor:pointer">
+                <input type="checkbox" id="all-locations" name="allLocations" title="Select all locations" aria-label="All locations"/>
+                <span style="font-size:0.65rem;text-transform:none;letter-spacing:0">All locations</span>
+              </label>
+            </th>
+            <th>Location</th>
+            <th>Code</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td style="text-align:center"><input type="checkbox" name="locationIds" value="1" aria-label="Select location 1"/></td>
+            <td>Head office</td>
+            <td class="cell-muted">000001</td>
+          </tr>
+          <tr>
+            <td style="text-align:center"><input type="checkbox" name="locationIds" value="2" aria-label="Select location 2"/></td>
+            <td>Regional office — North</td>
+            <td class="cell-muted">000002</td>
+          </tr>
+          <tr>
+            <td style="text-align:center"><input type="checkbox" name="locationIds" value="3" aria-label="Select location 3"/></td>
+            <td>Regional office — South</td>
+            <td class="cell-muted">000003</td>
+          </tr>
+          <tr>
+            <td style="text-align:center"><input type="checkbox" name="locationIds" value="4" aria-label="Select location 4"/></td>
+            <td>Site office</td>
+            <td class="cell-muted">000004</td>
+          </tr>
+          <tr>
+            <td style="text-align:center"><input type="checkbox" name="locationIds" value="5" aria-label="Select location 5"/></td>
+            <td>Marketing suite</td>
+            <td class="cell-muted">000005</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var master = document.getElementById('all-locations');
+      if (!master) return;
+      master.addEventListener('change', function () {
+        document.querySelectorAll('input[name="locationIds"]').forEach(function (cb) {
+          cb.checked = master.checked;
+        });
+      });
+    })();
+  </script>
+</th:block>
+</body>
+</html>

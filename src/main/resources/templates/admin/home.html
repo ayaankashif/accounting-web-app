@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/admin-shell :: layout(${pageTitle}, ~{::page-main})}">
+<body>
+<th:block th:fragment="page-main">
+  <div class="alert alert-success" th:if="${successMessage}" th:text="${successMessage}" style="margin-bottom:1rem"></div>
+
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:0.5rem">
+    <div>
+      <h1 class="page-title">Customer Management &amp; Financial System</h1>
+      <p class="page-sub">
+        Financial Year <strong style="color:var(--text)" th:text="${financialYearLabel}">2015–2016</strong>
+      </p>
+    </div>
+    <span class="date-badge" th:text="${headerDate}">07-Apr-2026</span>
+  </div>
+
+  <div class="grid-cards">
+    <div class="card">
+      <div class="card-label">Active tenants</div>
+      <div class="card-value">—</div>
+      <div class="card-meta">Multi-tenant overview <span class="pill-up">+0%</span> <span style="color:var(--text-muted)">vs last month</span></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Administrator users</div>
+      <div class="card-value">—</div>
+      <div class="card-meta">Setup &amp; security roles</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Open financial year</div>
+      <div class="card-value" style="font-size:1.15rem" th:text="${financialYearLabel}">2015–2016</div>
+      <div class="card-meta">Shown on home (CMFS style)</div>
+    </div>
+  </div>
+
+  <div class="card card-wide">
+    <div class="card-label">System context (CMFS home)</div>
+    <p class="page-sub" style="margin-bottom:0.75rem">Fields you showed on the home header / banner — bind to tenant settings and financial year when wiring services.</p>
+    <form class="form-grid form-grid-wide form-block" onsubmit="return false;">
+      <label class="field-label" for="home-fy-label">Financial year (display)</label>
+      <input class="input-dark" id="home-fy-label" name="financialYearLabel" type="text" th:value="${financialYearLabel}" placeholder="2015–2016"/>
+
+      <label class="field-label" for="home-system-date">System / working date</label>
+      <input class="input-dark" id="home-system-date" name="workingDate" type="date" th:value="${#temporals.format(workingDate, 'yyyy-MM-dd')}"/>
+
+      <label class="field-label" for="home-tenant">Current tenant (code)</label>
+      <input class="input-dark" id="home-tenant" name="tenantCode" type="text" readonly placeholder="From session"
+             th:value="${currentTenantCode}"/>
+    </form>
+    <div class="card-label" style="margin-top:0.5rem">Quick access</div>
+    <p class="page-sub" style="margin-bottom:1rem">Administrator · Setup &amp; Security.</p>
+    <div class="toolbar">
+      <a class="btn btn-primary" th:href="@{/admin/setup/users}">Users</a>
+      <a class="btn btn-ghost" th:href="@{/admin/setup/user-locations}">User Locations</a>
+      <a class="btn btn-ghost" th:href="@{/admin/setup/user-roles}">User Roles</a>
+      <a class="btn btn-ghost" th:href="@{/admin/security/user-privileges}">User Privileges</a>
+    </div>
+  </div>
+</th:block>
+</body>
+</html>

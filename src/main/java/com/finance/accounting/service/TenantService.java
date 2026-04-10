@@ -4,10 +4,12 @@ import com.finance.accounting.models.Tenant;
 import com.finance.accounting.repository.TenantRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +17,36 @@ import org.springframework.transaction.annotation.Transactional;
 public class TenantService {
 
     private final TenantRepository tenantRepository;
+
+    /**
+     * Registers a new organization (tenant). {@code code} is normalized to lowercase with spaces as hyphens.
+     */
+    @Transactional
+    public Tenant registerOrganization(String code, String name) {
+        String normalizedCode = normalizeCode(code);
+        if (!StringUtils.hasText(normalizedCode)) {
+            throw new IllegalArgumentException("Organization code is required");
+        }
+        if (!StringUtils.hasText(name)) {
+            throw new IllegalArgumentException("Organization name is required");
+        }
+        if (tenantRepository.existsByCode(normalizedCode)) {
+            throw new IllegalArgumentException("Organization code already exists: " + normalizedCode);
+        }
+        Tenant tenant = new Tenant();
+        tenant.setCode(normalizedCode);
+        tenant.setName(name.trim());
+        tenant.setActive(true);
+        return tenantRepository.save(tenant);
+    }
+
+    public static String normalizeCode(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String t = raw.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", "-");
+        return t.replaceAll("[^a-z0-9._-]", "");
+    }
 
     @Transactional
     public Tenant save(Tenant tenant) {
@@ -52,6 +84,10 @@ public class TenantService {
 
     public List<Tenant> findAll() {
         return tenantRepository.findAll();
+    }
+
+    public List<Tenant> findAllActive() {
+        return tenantRepository.findByActiveTrueOrderByNameAsc();
     }
 
     @Transactional

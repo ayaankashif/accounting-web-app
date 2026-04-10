@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register organization · CMFS</title>
+  <link rel="stylesheet" th:href="@{/css/admin-theme.css}"/>
+</head>
+<body>
+<div class="setup-layout">
+  <div class="setup-card">
+    <h1>Register your organization</h1>
+    <p class="setup-lead">Create the tenant first. Administration (users, roles, locations, privileges) applies to this organization only.</p>
+
+    <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}">Error</div>
+
+    <form th:action="@{/setup/organization}" method="post">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <div class="form-grid form-grid-wide" style="max-width:100%">
+        <label class="field-label" for="org-code">Organization code</label>
+        <div>
+          <input class="input-dark" id="org-code" name="code" type="text" required maxlength="64"
+                 placeholder="e.g. acme-housing"
+                 th:value="${prefillCode}"
+                 autocomplete="organization"/>
+          <div class="field-hint">Lowercase letters, numbers, dots, hyphens. Used as a stable key (e.g. subdomain later).</div>
+        </div>
+
+        <label class="field-label" for="org-name">Organization name</label>
+        <input class="input-dark" id="org-name" name="name" type="text" required maxlength="255"
+               placeholder="Legal or display name"
+               th:value="${prefillName}"
+               autocomplete="organization-title"/>
+      </div>
+      <div class="setup-actions">
+        <button type="submit" class="btn btn-primary">Create organization</button>
+        <a th:if="${tenantsExist}" class="btn btn-ghost" th:href="@{/setup/select-organization}">Back to list</a>
+      </div>
+    </form>
+
+    <a class="setup-muted-link" th:if="${tenantsExist}" th:href="@{/}">Home</a>
+  </div>
+</div>
+</body>
+</html>

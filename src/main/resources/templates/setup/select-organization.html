@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Select organization · CMFS</title>
+  <link rel="stylesheet" th:href="@{/css/admin-theme.css}"/>
+</head>
+<body>
+<div class="setup-layout">
+  <div class="setup-card">
+    <h1>Select organization</h1>
+    <p class="setup-lead">Choose which tenant you are working in. Administration screens open only after a selection.</p>
+
+    <div class="alert alert-error" th:if="${errorMessage}" th:text="${errorMessage}">Error</div>
+
+    <ul class="tenant-pick-list" th:if="${!tenants.isEmpty()}">
+      <li class="tenant-pick-item" th:each="t : ${tenants}">
+        <div>
+          <strong th:text="${t.name}">Name</strong>
+          <span th:text="${t.code}">code</span>
+        </div>
+        <form th:action="@{/setup/select-organization}" method="post" style="margin:0">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <input type="hidden" name="tenantId" th:value="${t.id}"/>
+          <button type="submit" class="btn btn-primary">Continue</button>
+        </form>
+      </li>
+    </ul>
+
+    <p class="setup-lead" th:if="${tenants.isEmpty()}">No active organizations. Register one first.</p>
+
+    <div class="setup-actions">
+      <a class="btn btn-primary" th:href="@{/setup/organization}">Register new organization</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
