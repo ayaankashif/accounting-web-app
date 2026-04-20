@@ -23,10 +23,6 @@ public class AppRoleService {
         if (role.getId() != null) {
             return update(tenantId, role.getId(), role);
         }
-        if (appRoleRepository.existsByTenant_IdAndDescription(tenantId, role.getDescription())) {
-            throw new IllegalArgumentException(
-                    "Role description already exists: " + role.getDescription());
-        }
         role.setTenant(tenantRepository.getReferenceById(tenantId));
         return appRoleRepository.save(role);
     }
@@ -37,12 +33,6 @@ public class AppRoleService {
                 appRoleRepository
                         .findByIdAndTenant_Id(id, tenantId)
                         .orElseThrow(() -> new EntityNotFoundException("Role not found: " + id));
-        if (patch.getDescription() != null
-                && !patch.getDescription().equals(existing.getDescription())
-                && appRoleRepository.existsByTenant_IdAndDescriptionAndIdNot(
-                        tenantId, patch.getDescription(), id)) {
-            throw new IllegalArgumentException("Role description already exists: " + patch.getDescription());
-        }
         if (patch.getRoleCode() != null) {
             existing.setRoleCode(patch.getRoleCode());
         }

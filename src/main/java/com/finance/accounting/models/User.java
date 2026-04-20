@@ -3,6 +3,7 @@ package com.finance.accounting.models;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -71,9 +72,24 @@ public class User extends TenantScopedModel {
     @Column(nullable = false)
     private boolean active = true;
 
+    // The `length = 512` here sets the maximum number of characters for storing the signature file's path as a string in the database, 
+    // not the file's size in MB or as an actual image. This column is only for the file path or filename of a signature image,
+    // not for storing the image itself. Actual picture uploading would require storing the image file elsewhere (e.g., filesystem or object storage)
+    // and saving only the path or reference here.
     @Column(name = "signature_file_path", length = 512)
     private String signatureFilePath;
 
     @Column(length = 255)
     private String email;
+
+    /**
+     * Optional default / primary site from the {@code locations} master. Distinct
+     * from {@code user_locations} (many-to-many); both may be used.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(
+            name = "location_id",
+            nullable = true,
+            foreignKey = @ForeignKey(name = "fk_users_location"))
+    private Location location;
 }

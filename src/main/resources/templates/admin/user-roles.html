@@ -5,6 +5,15 @@
   <h1 class="page-title">User Roles</h1>
   <p class="page-sub">Administrator · Setup — role master (list + entry).</p>
 
+  <div class="alert alert-error"
+       th:if="${errorMessage != null and !#strings.isEmpty(errorMessage)}"
+       th:text="${errorMessage}"
+       style="margin-bottom:1rem"></div>
+  <div class="alert alert-success"
+       th:if="${successMessage != null and !#strings.isEmpty(successMessage)}"
+       th:text="${successMessage}"
+       style="margin-bottom:1rem"></div>
+
   <div class="toolbar">
     <input class="input-dark" type="search" name="q" placeholder="Enter keyword to search" aria-label="Search"/>
     <select class="select-dark" name="filter" aria-label="Filter">
@@ -21,35 +30,28 @@
           <thead>
           <tr>
             <th>Role ID</th>
+            <th>Role code</th>
             <th>Role description</th>
             <th>Remarks</th>
+            <th></th>
           </tr>
           </thead>
           <tbody>
-          <tr>
-            <td class="cell-muted">001</td>
-            <td>BOOKING</td>
-            <td class="cell-muted">—</td>
+          <tr th:if="${roles == null or roles.isEmpty()}">
+            <td colspan="5" class="cell-muted">No roles for this organization yet.</td>
           </tr>
-          <tr>
-            <td class="cell-muted">002</td>
-            <td>Manager</td>
-            <td class="cell-muted">—</td>
-          </tr>
-          <tr>
-            <td class="cell-muted">003</td>
-            <td>Administrator</td>
-            <td class="cell-muted">—</td>
-          </tr>
-          <tr>
-            <td class="cell-muted">004</td>
-            <td>Accountant</td>
-            <td class="cell-muted">—</td>
-          </tr>
-          <tr>
-            <td class="cell-muted">005</td>
-            <td>MD</td>
-            <td class="cell-muted">Can only do…</td>
+          <tr th:each="r : ${roles}">
+            <td th:text="${r.id}">1</td>
+            <td th:text="${r.roleCode != null ? r.roleCode : '—'}">—</td>
+            <td th:text="${r.description}">Role</td>
+            <td th:text="${r.remarks != null ? r.remarks : '—'}">—</td>
+            <td>
+              <button type="button" class="btn btn-ghost js-load-role"
+                      th:data-id="${r.id}"
+                      th:data-role-code="${r.roleCode != null ? r.roleCode : ''}"
+                      th:data-description="${r.description}"
+                      th:data-remarks="${r.remarks != null ? r.remarks : ''}">Edit</button>
+            </td>
           </tr>
           </tbody>
         </table>
@@ -62,15 +64,17 @@
 
     <div class="card">
       <div class="card-label">Entry</div>
-      <form id="role-entry-form" class="form-grid form-grid-wide" action="#" method="post" th:action="@{/admin/setup/user-roles}" onsubmit="return false;">
-        <label class="field-label" for="role-id">Role ID</label>
+      <form id="role-entry-form" class="form-grid form-grid-wide" method="post" th:action="@{/admin/setup/user-roles}">
+        <input type="hidden" id="role-pk" name="id" value=""/>
+
+        <label class="field-label" for="role-id-display">Role ID</label>
         <div>
-          <input class="input-dark" id="role-id" name="roleId" type="text" value="Auto generated" readonly aria-readonly="true"/>
-          <div class="field-hint">System-generated on save</div>
+          <input class="input-dark" id="role-id-display" type="text" value="Auto generated" readonly aria-readonly="true" data-display-id/>
+          <div class="field-hint">Click Edit on a row to update, or leave blank for a new role on Save.</div>
         </div>
 
         <label class="field-label" for="role-code">Role code</label>
-        <input class="input-dark" id="role-code" name="roleCode" type="text" maxlength="16" placeholder="e.g. 001 (optional display code)"/>
+        <input class="input-dark" id="role-code" name="roleCode" type="text" maxlength="16" placeholder="e.g. ADM (optional)"/>
 
         <label class="field-label" for="role-description">Role description</label>
         <input class="input-dark" id="role-description" name="description" type="text" required maxlength="255" placeholder="BOOKING, Manager, Administrator…"/>
@@ -79,11 +83,45 @@
         <textarea class="textarea-dark" id="role-remarks" name="remarks" rows="4" placeholder="Optional notes"></textarea>
       </form>
 
+      <script type="text/javascript">
+        (function () {
+          document.querySelectorAll(".js-load-role").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var id = btn.getAttribute("data-id") || "";
+              document.getElementById("role-pk").value = id;
+              var disp = document.querySelector("[data-display-id]");
+              if (disp) {
+                disp.value = id ? id : "Auto generated";
+              }
+              document.getElementById("role-code").value = btn.getAttribute("data-role-code") || "";
+              document.getElementById("role-description").value = btn.getAttribute("data-description") || "";
+              document.getElementById("role-remarks").value = btn.getAttribute("data-remarks") || "";
+            });
+          });
+          var newBtn = document.getElementById("btn-new-role");
+          if (newBtn) {
+            newBtn.addEventListener("click", function () {
+              var form = document.getElementById("role-entry-form");
+              if (form) {
+                form.reset();
+              }
+              document.getElementById("role-pk").value = "";
+              var disp = document.querySelector("[data-display-id]");
+              if (disp) {
+                disp.value = "Auto generated";
+              }
+            });
+          }
+        })();
+      </script>
+
       <div class="toolbar" style="margin-top:1.25rem;margin-bottom:0">
         <button type="submit" form="role-entry-form" class="btn btn-primary">Save</button>
-        <button type="button" class="btn btn-ghost">Update</button>
-        <button type="button" class="btn btn-ghost">Delete</button>
+        <button type="submit" form="role-entry-form" class="btn btn-ghost" th:formaction="@{/admin/setup/user-roles/update}" formmethod="post">Update</button>
+        <button type="submit" form="role-entry-form" class="btn btn-ghost" th:formaction="@{/admin/setup/user-roles/delete}" formmethod="post"
+                onclick="return confirm('Delete this role? Users referencing it may fail.');">Delete</button>
         <button type="reset" form="role-entry-form" class="btn btn-ghost">Reset</button>
+        <button type="button" class="btn btn-ghost" id="btn-new-role">New role</button>
       </div>
     </div>
   </div>

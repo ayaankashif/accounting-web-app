@@ -1,7 +1,17 @@
 package com.finance.accounting.controller;
 
+import com.finance.accounting.models.AppRole;
+import com.finance.accounting.models.Location;
+import com.finance.accounting.models.User;
+import com.finance.accounting.service.AppRoleService;
+import com.finance.accounting.service.LocationService;
+import com.finance.accounting.service.UserService;
+import com.finance.accounting.web.TenantSession;
+import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,8 +21,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/admin")
 public class AdminController {
 
+    private final UserService userService;
+    private final AppRoleService appRoleService;
+    private final LocationService locationService;
+
     private static final DateTimeFormatter HEADER_DATE =
             DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+
+    public AdminController(
+            UserService userService, AppRoleService appRoleService, LocationService locationService) {
+        this.userService = userService;
+        this.appRoleService = appRoleService;
+        this.locationService = locationService;
+    }
 
     @GetMapping({"", "/"})
     public String adminRoot() {
@@ -30,21 +51,25 @@ public class AdminController {
     }
 
     @GetMapping("/setup/users")
-    public String users(Model model) {
+    public String users(Model model, HttpSession session) {
         addShell(model, "Users", "users", true, false);
+        Long tenantId = (Long) session.getAttribute(TenantSession.TENANT_ID);
+        List<User> users =
+                tenantId != null
+                        ? userService.findAll(tenantId)
+                        : Collections.emptyList();
+        List<AppRole> roles =
+                tenantId != null
+                        ? appRoleService.findAll(tenantId)
+                        : Collections.emptyList();
+        List<Location> locations =
+                tenantId != null
+                        ? locationService.findAll(tenantId)
+                        : Collections.emptyList();
+        model.addAttribute("users", users);
+        model.addAttribute("roles", roles);
+        model.addAttribute("locations", locations);
         return "admin/users";
-    }
-
-    @GetMapping("/setup/user-locations")
-    public String userLocations(Model model) {
-        addShell(model, "User Locations", "user-locations", true, false);
-        return "admin/user-locations";
-    }
-
-    @GetMapping("/setup/user-roles")
-    public String userRoles(Model model) {
-        addShell(model, "User Roles", "user-roles", true, false);
-        return "admin/user-roles";
     }
 
     @GetMapping("/security/user-privileges")

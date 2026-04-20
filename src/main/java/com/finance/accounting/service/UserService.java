@@ -1,6 +1,7 @@
 package com.finance.accounting.service;
 
 import com.finance.accounting.models.AppRole;
+import com.finance.accounting.models.Location;
 import com.finance.accounting.models.User;
 import com.finance.accounting.repository.AppRoleRepository;
 import com.finance.accounting.repository.TenantRepository;
@@ -21,6 +22,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final AppRoleRepository appRoleRepository;
     private final TenantRepository tenantRepository;
+    private final LocationService locationService;
 
     @Transactional
     public User save(Long tenantId, User user) {
@@ -35,9 +37,13 @@ public class UserService {
                 && userRepository.existsByTenant_IdAndUserCode(tenantId, user.getUserCode())) {
             throw new IllegalArgumentException("User code already exists: " + user.getUserCode());
         }
+        if (!StringUtils.hasText(user.getPasswordHash())) {
+            throw new IllegalArgumentException("Password is required for new users.");
+        }
         user.setTenant(tenantRepository.getReferenceById(tenantId));
         AppRole role = resolveRoleForTenant(tenantId, user.getRole());
         user.setRole(role);
+        user.setLocation(resolveLocationForTenant(tenantId, user.getLocation()));
         return userRepository.save(user);
     }
 
@@ -69,10 +75,13 @@ public class UserService {
             existing.setFullName(patch.getFullName());
         }
         existing.setJobDescription(patch.getJobDescription());
+        existing.setLocation(resolveLocationForTenant(tenantId, patch.getLocation()));
         existing.setEmail(patch.getEmail());
         existing.setExpiryDate(patch.getExpiryDate());
         existing.setAmountLimit(patch.getAmountLimit());
-        existing.setSignatureFilePath(patch.getSignatureFilePath());
+        if (patch.getSignatureFilePath() != null) {
+            existing.setSignatureFilePath(patch.getSignatureFilePath());
+        }
         existing.setVoucherReversalAllowed(patch.isVoucherReversalAllowed());
         existing.setPostedMaintenanceEditAllowed(patch.isPostedMaintenanceEditAllowed());
         existing.setAllowOldRateInBooking(patch.isAllowOldRateInBooking());
@@ -81,6 +90,16 @@ public class UserService {
             existing.setRole(resolveRoleForTenant(tenantId, patch.getRole()));
         }
         return userRepository.save(existing);
+    }
+
+    private Location resolveLocationForTenant(Long tenantId, Location ref) {
+        if (ref == null || ref.getId() == null) {
+            return null;
+        }
+        return locationService
+                .findById(tenantId, ref.getId())
+                .orElseThrow(
+                        () -> new EntityNotFoundException("Location not found: " + ref.getId()));
     }
 
     private AppRole resolveRoleForTenant(Long tenantId, AppRole roleRef) {

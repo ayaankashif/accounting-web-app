@@ -9,7 +9,9 @@ import com.finance.accounting.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -91,7 +93,27 @@ public class UserLocationService {
         userRepository
                 .findByIdAndTenant_Id(userId, tenantId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
-        return userLocationRepository.findByUser_Id(userId);
+        return userLocationRepository.findByUserIdWithLocationGraph(userId);
+    }
+
+    /**
+     * For the User Location page: all {@link UserLocation} rows for this user, keyed by location id.
+     */
+    public Map<Long, UserLocation> findAssignmentsByLocationId(Long tenantId, Long userId) {
+        userRepository
+                .findByIdAndTenant_Id(userId, tenantId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + userId));
+        List<UserLocation> list = userLocationRepository.findByUserIdWithLocationGraph(userId);
+        Map<Long, UserLocation> map = new HashMap<>();
+        for (UserLocation u : list) {
+            map.put(u.getLocation().getId(), u);
+        }
+        return map;
+    }
+
+    public List<UserLocation> findAllForTenant(Long tenantId) {
+        return userLocationRepository.findByUser_Tenant_IdOrderByUser_UsernameAscLocation_LocationCodeAsc(
+                tenantId);
     }
 
     public List<UserLocation> findAll() {
