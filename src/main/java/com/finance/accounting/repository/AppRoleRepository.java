@@ -10,8 +10,4 @@ public interface AppRoleRepository extends JpaRepository<AppRole, Long> {
     List<AppRole> findByTenant_IdOrderByDescriptionAsc(Long tenantId);
 
     Optional<AppRole> findByIdAndTenant_Id(Long id, Long tenantId);
-
-    boolean existsByTenant_IdAndDescriptionAndIdNot(Long tenantId, String description, Long id);
-
-    boolean existsByTenant_IdAndDescription(Long tenantId, String description);
 }

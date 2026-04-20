@@ -3,91 +3,250 @@
 <body>
 <th:block th:fragment="page-main">
   <h1 class="page-title">User Location</h1>
-  <p class="page-sub">Administrator · Setup — map users to locations (list + entry).</p>
+  <p class="page-sub">Administrator · Setup — filter users, pick one, tick locations, then save.</p>
 
-  <div class="toolbar">
-    <input class="input-dark" type="search" name="q" placeholder="Enter keyword to search" aria-label="Search"/>
-    <select class="select-dark" name="filter" aria-label="Filter">
-      <option value="all">All</option>
-    </select>
-    <button type="button" class="btn btn-ghost">Search</button>
-  </div>
+  <div class="alert alert-error"
+       th:if="${errorMessage != null and !#strings.isEmpty(errorMessage)}"
+       th:text="${errorMessage}"
+       style="margin-bottom:1rem"></div>
+  <div class="alert alert-success"
+       th:if="${successMessage != null and !#strings.isEmpty(successMessage)}"
+       th:text="${successMessage}"
+       style="margin-bottom:1rem"></div>
 
-  <div class="grid-cards">
-    <div class="card">
-      <div class="card-label">Entry</div>
-      <form id="user-location-form" class="form-grid form-grid-wide" action="#" method="post" th:action="@{/admin/setup/user-locations}" onsubmit="return false;">
-        <label class="field-label" for="ul-user">User</label>
-        <div>
-          <div class="inline-fields">
-            <input class="input-dark" id="ul-user" name="userSearch" type="text" placeholder="Search user" autocomplete="off"/>
-            <input class="input-dark input-compact" id="ul-user-code" name="userCode" type="text" placeholder="Code" maxlength="32" aria-label="User code"/>
+  <!-- Single form: entry (search + user + id/code) + location grid -->
+  <form id="ul-main-form"
+        method="post"
+        th:action="@{/admin/setup/user-locations/assign}"
+        th:attr="data-base-url=@{/admin/setup/user-locations}">
+
+    <div class="grid-cards user-location-layout">
+      <div class="card">
+        <div class="card-label">Entry</div>
+        <div class="form-grid form-grid-wide" style="gap:0.5rem">
+          <div class="ul-entry-row" role="group" aria-label="User search and selection">
+            <span class="ul-entry-k" id="ul-lbl-search">Search</span>
+            <input class="input-dark ul-entry-field ul-entry-search" id="ul-user-search" type="search"
+                   autocomplete="off" placeholder="Filter…" aria-labelledby="ul-lbl-search"/>
+            <button type="button" class="btn btn-ghost ul-entry-clear" id="ul-search-clear" title="Clear search" aria-label="Clear search">×</button>
+            <span class="ul-entry-k" id="ul-lbl-user">User</span>
+            <select class="select-dark ul-entry-field ul-entry-select" id="ul-user-select" name="userId" required
+                    aria-labelledby="ul-lbl-user">
+              <option value="" th:selected="${selectedUserId == null}">—</option>
+              <option th:each="u : ${users}"
+                      th:value="${u.id}"
+                      th:selected="${selectedUserId != null && selectedUserId == u.id}"
+                      th:data-username="${u.username}"
+                      th:data-user-code="${u.userCode != null ? u.userCode : ''}"
+                      th:text="${u.username}">user</option>
+            </select>
+            <span class="ul-entry-k">ID</span>
+            <input class="input-dark ul-entry-field ul-entry-pill" id="ul-id-display" type="text" readonly tabindex="-1"
+                   th:value="${selectedUser != null ? selectedUser.id : ''}"
+                   aria-readonly="true" title="User record id" placeholder="—"/>
+            <span class="ul-entry-k">Code</span>
+            <input class="input-dark ul-entry-field ul-entry-pill" id="ul-code-display" type="text" readonly tabindex="-1"
+                   th:value="${selectedUser != null && selectedUser.userCode != null ? selectedUser.userCode : ''}"
+                   aria-readonly="true" title="User code" placeholder="—"/>
           </div>
-          <div class="field-hint" style="margin-top:0.35rem">Pick user (login or name); short code beside field as on CMFS.</div>
+          <p class="field-hint" style="margin:0">Search users, select one, then tick locations and Save. Saved rows show assignment id and time; <strong>Remove</strong> drops that user from that site only. Enter in Search picks the first visible user.</p>
+          <div class="toolbar" style="margin-top:0.35rem;margin-bottom:0">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-ghost" id="ul-btn-reset">Reset</button>
+          </div>
         </div>
-      </form>
-      <div class="toolbar" style="margin-top:1rem;margin-bottom:0">
-        <button type="submit" form="user-location-form" class="btn btn-primary">Save</button>
-        <button type="reset" form="user-location-form" class="btn btn-ghost">Reset</button>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Locations</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+            <tr>
+              <th style="width:52px;text-align:center">
+                <label class="cell-muted" style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;font-weight:600;cursor:pointer">
+                  <input type="checkbox" id="all-locations" title="Select all locations" aria-label="All locations"/>
+                  <span style="font-size:0.65rem;text-transform:none;letter-spacing:0">All locations</span>
+                </label>
+              </th>
+              <th>Location</th>
+              <th>Code</th>
+              <th>Assignment id</th>
+              <th>Assigned at</th>
+              <th style="min-width:6.5rem">Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${locations == null or locations.isEmpty()}">
+              <td colspan="6" class="cell-muted">No locations defined for this organization.</td>
+            </tr>
+            <tr th:each="loc : ${locations}" th:with="ul=${userLocationByLocation.get(loc.id)}">
+              <td style="text-align:center">
+                <input type="checkbox" name="locationIds" th:value="${loc.id}"
+                       th:checked="${selectedLocationIds != null && selectedLocationIds.contains(loc.id)}"
+                       th:attr="aria-label=${'Select ' + loc.locationName}"/>
+              </td>
+              <td th:text="${loc.locationName}">Head office</td>
+              <td class="cell-muted" th:text="${loc.locationCode}">000001</td>
+              <td class="cell-muted" th:text="${ul != null ? ul.id : '—'}">—</td>
+              <td class="cell-muted"
+                  th:text="${ul != null and ul.assignedAt != null ? #temporals.format(ul.assignedAt, 'dd/MM/yyyy HH:mm') : (ul != null and ul.createdAt != null ? #temporals.format(ul.createdAt, 'dd/MM/yyyy HH:mm') : '—')}">—</td>
+              <td>
+                <th:block th:if="${ul != null and selectedUserId != null}">
+                  <form method="post" th:action="@{/admin/setup/user-locations/delete}" style="display:inline"
+                        onsubmit="return confirm('Remove this user from this location?');">
+                    <input type="hidden" name="id" th:value="${ul.id}"/>
+                    <input type="hidden" name="userId" th:value="${selectedUserId}"/>
+                    <button type="submit" class="btn btn-ghost">Remove</button>
+                  </form>
+                </th:block>
+                <span th:if="${ul == null or selectedUserId == null}" class="cell-muted">—</span>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
+  </form>
 
-    <div class="card">
-      <div class="card-label">Locations</div>
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-          <tr>
-            <th style="width:48px;text-align:center">
-              <label class="cell-muted" style="display:flex;flex-direction:column;align-items:center;gap:0.25rem;font-weight:600;cursor:pointer">
-                <input type="checkbox" id="all-locations" name="allLocations" title="Select all locations" aria-label="All locations"/>
-                <span style="font-size:0.65rem;text-transform:none;letter-spacing:0">All locations</span>
-              </label>
-            </th>
-            <th>Location</th>
-            <th>Code</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr>
-            <td style="text-align:center"><input type="checkbox" name="locationIds" value="1" aria-label="Select location 1"/></td>
-            <td>Head office</td>
-            <td class="cell-muted">000001</td>
-          </tr>
-          <tr>
-            <td style="text-align:center"><input type="checkbox" name="locationIds" value="2" aria-label="Select location 2"/></td>
-            <td>Regional office — North</td>
-            <td class="cell-muted">000002</td>
-          </tr>
-          <tr>
-            <td style="text-align:center"><input type="checkbox" name="locationIds" value="3" aria-label="Select location 3"/></td>
-            <td>Regional office — South</td>
-            <td class="cell-muted">000003</td>
-          </tr>
-          <tr>
-            <td style="text-align:center"><input type="checkbox" name="locationIds" value="4" aria-label="Select location 4"/></td>
-            <td>Site office</td>
-            <td class="cell-muted">000004</td>
-          </tr>
-          <tr>
-            <td style="text-align:center"><input type="checkbox" name="locationIds" value="5" aria-label="Select location 5"/></td>
-            <td>Marketing suite</td>
-            <td class="cell-muted">000005</td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
+  <div class="card" style="margin-top:1rem">
+    <div class="card-label">Current assignments (all users)</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+        <tr>
+          <th>User</th>
+          <th>Location</th>
+          <th>Code</th>
+          <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${assignments == null or assignments.isEmpty()}">
+          <td colspan="4" class="cell-muted">No user–location assignments yet.</td>
+        </tr>
+        <tr th:each="a : ${assignments}">
+          <td th:text="${a.user != null ? a.user.username : '—'}">user</td>
+          <td th:text="${a.location != null ? a.location.locationName : '—'}">loc</td>
+          <td class="cell-muted" th:text="${a.location != null ? a.location.locationCode : '—'}">000</td>
+          <td>
+            <form method="post" th:action="@{/admin/setup/user-locations/delete}" style="display:inline"
+                  onsubmit="return confirm('Remove this assignment?');">
+              <input type="hidden" name="id" th:value="${a.id}"/>
+              <input type="hidden" th:if="${a.user != null}" name="userId" th:value="${a.user.id}"/>
+              <button type="submit" class="btn btn-ghost">Remove</button>
+            </form>
+          </td>
+        </tr>
+        </tbody>
+      </table>
     </div>
   </div>
-  <script>
+
+  <script type="text/javascript">
     (function () {
-      var master = document.getElementById('all-locations');
-      if (!master) return;
-      master.addEventListener('change', function () {
-        document.querySelectorAll('input[name="locationIds"]').forEach(function (cb) {
-          cb.checked = master.checked;
+      var form = document.getElementById("ul-main-form");
+      var sel = document.getElementById("ul-user-select");
+      var idDisp = document.getElementById("ul-id-display");
+      var codeDisp = document.getElementById("ul-code-display");
+      var search = document.getElementById("ul-user-search");
+      var baseUrl = form ? form.getAttribute("data-base-url") || "" : "";
+
+      function syncDisplaysFromSelect() {
+        if (!sel || !idDisp || !codeDisp) return;
+        var opt = sel.options[sel.selectedIndex];
+        if (!opt || !opt.value) {
+          idDisp.value = "";
+          codeDisp.value = "";
+          return;
+        }
+        idDisp.value = opt.value;
+        codeDisp.value = opt.getAttribute("data-user-code") || "";
+      }
+
+      function applySearchFilter() {
+        if (!search || !sel) return;
+        var q = (search.value || "").toLowerCase().trim();
+        Array.prototype.forEach.call(sel.options, function (opt) {
+          if (!opt.value) {
+            opt.hidden = false;
+            return;
+          }
+          opt.hidden = q.length > 0 && (opt.textContent || "").toLowerCase().indexOf(q) < 0;
         });
-      });
+      }
+
+      function firstVisibleUserOption() {
+        if (!sel) return null;
+        for (var i = 0; i < sel.options.length; i++) {
+          var o = sel.options[i];
+          if (o.value && !o.hidden) return o;
+        }
+        return null;
+      }
+
+      if (search && sel) {
+        search.addEventListener("input", applySearchFilter);
+        search.addEventListener("keydown", function (ev) {
+          if (ev.key !== "Enter") return;
+          ev.preventDefault();
+          var pick = firstVisibleUserOption();
+          if (!pick) return;
+          sel.value = pick.value;
+          syncDisplaysFromSelect();
+          sel.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+      }
+
+      var clearBtn = document.getElementById("ul-search-clear");
+      if (clearBtn && search) {
+        clearBtn.addEventListener("click", function () {
+          search.value = "";
+          applySearchFilter();
+          if (sel) sel.focus();
+        });
+      }
+
+      var prevUser = sel ? sel.value : "";
+      if (sel) {
+        sel.addEventListener("change", function () {
+          syncDisplaysFromSelect();
+          var v = sel.value;
+          if (v && v !== prevUser) {
+            window.location.href = baseUrl + (baseUrl.indexOf("?") >= 0 ? "&" : "?") + "userId=" + encodeURIComponent(v);
+          } else if (!v) {
+            window.location.href = baseUrl.split("?")[0];
+          }
+          prevUser = v;
+        });
+        syncDisplaysFromSelect();
+      }
+
+      applySearchFilter();
+
+      var master = document.getElementById("all-locations");
+      if (master) {
+        master.addEventListener("change", function () {
+          document.querySelectorAll('input[name="locationIds"]').forEach(function (cb) {
+            cb.checked = master.checked;
+          });
+        });
+      }
+
+      var resetBtn = document.getElementById("ul-btn-reset");
+      if (resetBtn && form) {
+        resetBtn.addEventListener("click", function () {
+          if (search) {
+            search.value = "";
+            applySearchFilter();
+          }
+          form.reset();
+          syncDisplaysFromSelect();
+          if (master) master.checked = false;
+          window.location.href = baseUrl.split("?")[0];
+        });
+      }
     })();
   </script>
 </th:block>

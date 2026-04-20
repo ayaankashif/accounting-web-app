@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS roles (
     remarks         TEXT NULL,
     created_at      DATETIME(6) NULL,
     modified_at     DATETIME(6) NULL,
-    UNIQUE KEY uk_roles_tenant_description (tenant_id, description),
     KEY ix_roles_tenant (tenant_id),
+    KEY ix_roles_tenant_description (tenant_id, description),
     CONSTRAINT fk_roles_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -80,13 +80,16 @@ CREATE TABLE IF NOT EXISTS users (
     active                              BIT(1) NOT NULL DEFAULT 1,
     signature_file_path                 VARCHAR(512) NULL,
     email                               VARCHAR(255) NULL,
+    location_id                         BIGINT UNSIGNED NULL COMMENT 'optional default site; FK to locations',
     created_at                          DATETIME(6) NULL,
     modified_at                         DATETIME(6) NULL,
     UNIQUE KEY uk_users_tenant_username (tenant_id, username),
     UNIQUE KEY uk_users_tenant_user_code (tenant_id, user_code),
     KEY ix_users_tenant (tenant_id),
+    KEY ix_users_location (location_id),
     CONSTRAINT fk_users_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id),
-    CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles (id)
+    CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles (id),
+    CONSTRAINT fk_users_location FOREIGN KEY (location_id) REFERENCES locations (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS user_locations (

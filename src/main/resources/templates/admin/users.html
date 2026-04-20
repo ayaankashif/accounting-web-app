@@ -5,6 +5,42 @@
   <h1 class="page-title">Users</h1>
   <p class="page-sub">Administrator · Setup — user accounts (CMFS layout: list + entry).</p>
 
+  <style type="text/css">
+    .location-combo { position: relative; }
+    .location-combo__row { display: flex; gap: 0.35rem; align-items: stretch; }
+    .location-combo__row .input-dark { flex: 1; min-width: 0; }
+    .location-combo__open {
+      flex: 0 0 auto; min-width: 2.5rem; padding: 0 0.4rem; font-size: 0.75rem;
+    }
+    .location-combo__clear {
+      flex: 0 0 auto; min-width: 2.25rem; padding: 0 0.35rem; line-height: 1; font-size: 1.1rem;
+    }
+    .location-combo__panel {
+      position: absolute; z-index: 30; left: 0; right: 0; top: 100%;
+      margin-top: 0.2rem; max-height: 14rem; overflow-y: auto;
+      background: var(--surface); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-md); box-shadow: var(--shadow);
+    }
+    .location-combo__list { list-style: none; margin: 0; padding: 0.25rem 0; }
+    .location-combo__list li {
+      margin: 0; padding: 0.4rem 0.75rem; cursor: pointer; font-size: 0.9rem;
+    }
+    .location-combo__list li:hover, .location-combo__list li[aria-selected="true"] {
+      background: var(--surface-hover);
+    }
+    .location-combo__list li[hidden] { display: none !important; }
+    .location-combo__empty { margin: 0.5rem 0.75rem; color: var(--text-muted); font-size: 0.85rem; }
+  </style>
+
+  <div class="alert alert-error"
+       th:if="${errorMessage != null and !#strings.isEmpty(errorMessage)}"
+       th:text="${errorMessage}"
+       style="margin-bottom:1rem"></div>
+  <div class="alert alert-success"
+       th:if="${successMessage != null and !#strings.isEmpty(successMessage)}"
+       th:text="${successMessage}"
+       style="margin-bottom:1rem"></div>
+
   <div class="toolbar">
     <input class="input-dark" type="search" name="q" placeholder="Enter keyword to search" aria-label="Search users"/>
     <select class="select-dark" name="filter" aria-label="Filter">
@@ -25,15 +61,40 @@
             <th>Full name</th>
             <th>Role</th>
             <th>Job description</th>
+            <th>Location</th>
+            <th></th>
           </tr>
           </thead>
           <tbody>
-          <tr>
-            <td class="cell-muted">—</td>
-            <td class="cell-muted">—</td>
-            <td class="cell-muted">—</td>
-            <td class="cell-muted">—</td>
-            <td class="cell-muted">—</td>
+          <tr th:if="${users == null or users.isEmpty()}">
+            <td colspan="7" class="cell-muted">No users yet.</td>
+          </tr>
+          <tr th:each="u : ${users}">
+            <td th:text="${u.id}">1</td>
+            <td th:text="${u.username}">user</td>
+            <td th:text="${u.fullName}">Name</td>
+            <td th:text="${u.role != null ? u.role.description : '—'}">Role</td>
+            <td th:text="${u.jobDescription != null ? u.jobDescription : '—'}">—</td>
+            <td th:text="${u.location != null ? (u.location.locationCode + ' – ' + u.location.locationName) : '—'}">—</td>
+            <td>
+              <button type="button" class="btn btn-ghost js-load-user"
+                      th:data-id="${u.id}"
+                      th:data-username="${u.username}"
+                      th:data-full-name="${u.fullName}"
+                      th:data-user-code="${u.userCode != null ? u.userCode : ''}"
+                      th:data-email="${u.email != null ? u.email : ''}"
+                      th:data-job-description="${u.jobDescription != null ? u.jobDescription : ''}"
+                      th:data-location-id="${u.location != null ? u.location.id : ''}"
+                      th:data-location-label="${u.location != null ? (u.location.locationCode + ' – ' + u.location.locationName) : ''}"
+                      th:data-expiry="${u.expiryDate != null ? #temporals.format(u.expiryDate, 'yyyy-MM-dd') : ''}"
+                      th:data-amount="${u.amountLimit != null ? u.amountLimit : ''}"
+                      th:data-role-id="${u.role != null ? u.role.id : ''}"
+                      th:data-voucher="${u.voucherReversalAllowed}"
+                      th:data-posted="${u.postedMaintenanceEditAllowed}"
+                      th:data-oldrate="${u.allowOldRateInBooking}"
+                      th:data-active="${u.active}"
+                      th:data-has-signature="${u.signatureFilePath != null}">Edit</button>
+            </td>
           </tr>
           </tbody>
         </table>
@@ -48,23 +109,44 @@
 
     <div class="card">
       <div class="card-label">Entry</div>
-      <form id="user-entry-form" class="form-grid form-grid-wide" action="#" method="post" th:action="@{/admin/setup/users}" onsubmit="return false;">
+      <form id="user-entry-form" class="form-grid form-grid-wide" method="post" th:action="@{/admin/setup/users}" enctype="multipart/form-data">
+        <input type="hidden" id="user-pk" name="id" value=""/>
+
         <label class="field-label" for="user-id">User ID</label>
         <div>
-          <input class="input-dark" id="user-id" name="userId" type="text" value="Auto generated" readonly aria-readonly="true"/>
-          <div class="field-hint">System-generated on save</div>
+          <input class="input-dark" id="user-id" type="text" value="Auto generated" readonly aria-readonly="true" data-display-id/>
+          <div class="field-hint">Choose Edit on a row to update/delete, or leave blank for a new user on Save.</div>
         </div>
 
-        <label class="field-label" for="user-location">User location</label>
-        <input class="input-dark" id="user-location" name="userLocation" type="text" autocomplete="organization" placeholder="Branch / office"/>
+        <label class="field-label" for="user-location-search">User location</label>
+        <div class="location-combo" id="user-location-combo">
+          <input type="hidden" name="locationId" id="location-id" value=""/>
+          <div class="location-combo__row">
+            <input class="input-dark" type="search" id="user-location-search" autocomplete="off"
+                   placeholder="Type to search, or open list" aria-autocomplete="list" aria-controls="user-location-panel"
+                   th:disabled="${#lists.isEmpty(locations)}"/>
+            <button type="button" class="btn btn-ghost location-combo__open" id="user-location-open"
+                    th:disabled="${#lists.isEmpty(locations)}" title="Show all" aria-label="Open location list">▾</button>
+            <button type="button" class="btn btn-ghost location-combo__clear" id="user-location-clear"
+                    th:disabled="${#lists.isEmpty(locations)}" title="Clear" aria-label="Clear location">×</button>
+          </div>
+          <div class="location-combo__panel" id="user-location-panel" role="listbox" hidden>
+            <ul class="location-combo__list" id="user-location-list" th:if="${not #lists.isEmpty(locations)}">
+              <li th:each="loc : ${locations}" role="option" th:data-id="${loc.id}" tabindex="-1"
+                  th:text="${loc.locationCode + ' – ' + loc.locationName}">LOC – Name</li>
+            </ul>
+            <p th:if="${#lists.isEmpty(locations)}" class="location-combo__empty" id="user-location-empty">
+              No locations for this organization. Add them under Setup (Locations) first.
+            </p>
+          </div>
+          <p class="field-hint" th:unless="${#lists.isEmpty(locations)}">Search filters the list; pick a row to assign. Leave empty for no default site.</p>
+          <p class="field-hint" th:if="${#lists.isEmpty(locations)}">Create locations in Setup to enable assignment here.</p>
+        </div>
 
         <label class="field-label" for="user-role">User role</label>
         <select class="select-dark" id="user-role" name="roleId" aria-label="User role">
           <option value="">— Select role —</option>
-          <option value="1">Administrator</option>
-          <option value="2">Manager</option>
-          <option value="3">Accountant</option>
-          <option value="4">BOOKING</option>
+          <option th:each="r : ${roles}" th:value="${r.id}" th:text="${r.description}">Role</option>
         </select>
 
         <label class="field-label" for="expiry-date">Expiry date</label>
@@ -83,7 +165,10 @@
         <input class="input-dark" id="job-description" name="jobDescription" type="text" placeholder="e.g. Marketing"/>
 
         <label class="field-label" for="password">Password</label>
-        <input class="input-dark" id="password" name="password" type="password" autocomplete="new-password" placeholder="Leave blank to keep unchanged on update"/>
+        <div>
+          <input class="input-dark" id="password" name="password" type="password" autocomplete="new-password" placeholder="Required when saving a new user"/>
+          <div class="field-hint">Required when saving a new user. On Update, leave blank to keep the current password.</div>
+        </div>
 
         <label class="field-label" for="amount-limit">Amount limit</label>
         <input class="input-dark" id="amount-limit" name="amountLimit" type="number" inputmode="decimal" step="0.0001" min="0" placeholder="0.0000"/>
@@ -120,22 +205,325 @@
 
         <label class="field-label" for="signature">Signature</label>
         <div>
-          <div class="file-drop">
+          <div class="file-drop" id="signature-drop" aria-describedby="signature-file-status">
             <span>Drop file here or choose a file</span>
             <label>
               <span class="btn btn-ghost" style="height:auto;padding:0.45rem 0.85rem;display:inline-block;cursor:pointer">Select file</span>
               <input class="input-file-hidden" id="signature" name="signature" type="file" accept="image/*,.pdf"/>
             </label>
+            <p id="signature-file-status" class="file-drop-status" role="status" aria-live="polite">
+              No file selected. The file is sent to the server when you click Save.
+            </p>
           </div>
         </div>
       </form>
 
+      <script type="text/javascript">
+        (function () {
+          var form = document.getElementById("user-entry-form");
+          var input = document.getElementById("signature");
+          var status = document.getElementById("signature-file-status");
+          var drop = document.getElementById("signature-drop");
+          if (!form || !input || !status || !drop) return;
+
+          function formatSize(n) {
+            if (n >= 1048576) return (n / 1048576).toFixed(1) + " MB";
+            if (n >= 1024) return (n / 1024).toFixed(1) + " KB";
+            return n + " B";
+          }
+
+          function updateStatus() {
+            var f = input.files && input.files[0];
+            if (f) {
+              status.textContent =
+                "Selected: " +
+                f.name +
+                " (" +
+                formatSize(f.size) +
+                "). It will upload when you click Save.";
+              status.classList.add("is-selected");
+              drop.classList.add("file-drop--has-file");
+            } else {
+              status.textContent =
+                "No file selected. Choose an image or PDF; it uploads when you click Save.";
+              status.classList.remove("is-selected");
+              drop.classList.remove("file-drop--has-file");
+            }
+          }
+
+          input.addEventListener("change", updateStatus);
+          form.addEventListener("reset", function () {
+            setTimeout(updateStatus, 0);
+          });
+
+          ["dragenter", "dragover"].forEach(function (ev) {
+            drop.addEventListener(ev, function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              drop.classList.add("file-drop--drag");
+            });
+          });
+          ["dragleave", "drop"].forEach(function (ev) {
+            drop.addEventListener(ev, function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              drop.classList.remove("file-drop--drag");
+            });
+          });
+          drop.addEventListener("drop", function (e) {
+            var files = e.dataTransfer && e.dataTransfer.files;
+            if (!files || !files.length) return;
+            var dt = new DataTransfer();
+            dt.items.add(files[0]);
+            input.files = dt.files;
+            updateStatus();
+          });
+
+          updateStatus();
+        })();
+      </script>
+
+      <script type="text/javascript">
+        (function () {
+          function setSelectValue(id, value) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.value = value === "true" ? "true" : "false";
+          }
+
+          function wireUserLocationCombobox() {
+            var hidden = document.getElementById("location-id");
+            var search = document.getElementById("user-location-search");
+            var panel = document.getElementById("user-location-panel");
+            var list = document.getElementById("user-location-list");
+            var openBtn = document.getElementById("user-location-open");
+            var clearBtn = document.getElementById("user-location-clear");
+            if (!hidden || !search || !panel) return;
+
+            function getOptions() {
+              if (!list) return [];
+              return [].slice.call(list.querySelectorAll("li[role=option]"));
+            }
+
+            function setAllVisible() {
+              getOptions().forEach(function (li) {
+                li.hidden = false;
+              });
+            }
+
+            function filterOptions(q) {
+              var t = (q || "").trim().toLowerCase();
+              getOptions().forEach(function (li) {
+                li.hidden = t.length > 0 && (li.textContent || "").toLowerCase().indexOf(t) < 0;
+              });
+            }
+
+            function showPanel() {
+              panel.removeAttribute("hidden");
+              search.setAttribute("aria-expanded", "true");
+            }
+
+            function hidePanel() {
+              panel.setAttribute("hidden", "hidden");
+              search.setAttribute("aria-expanded", "false");
+            }
+
+            function togglePanel() {
+              if (panel.hasAttribute("hidden")) {
+                setAllVisible();
+                showPanel();
+              } else {
+                hidePanel();
+              }
+            }
+
+            function clearLocation() {
+              hidden.value = "";
+              search.value = "";
+              setAllVisible();
+              hidePanel();
+            }
+
+            search.addEventListener("input", function () {
+              hidden.value = "";
+              filterOptions(search.value);
+              showPanel();
+            });
+
+            search.addEventListener("focus", function () {
+              if (list) {
+                filterOptions(search.value);
+                showPanel();
+              }
+            });
+
+            var closeTimer;
+            function scheduleClose() {
+              clearTimeout(closeTimer);
+              closeTimer = setTimeout(function () {
+                hidePanel();
+              }, 180);
+            }
+
+            function cancelClose() {
+              clearTimeout(closeTimer);
+            }
+
+            search.addEventListener("blur", scheduleClose);
+            if (openBtn) openBtn.addEventListener("mousedown", cancelClose);
+            if (clearBtn) clearBtn.addEventListener("mousedown", cancelClose);
+            if (panel) panel.addEventListener("mousedown", cancelClose);
+
+            if (openBtn) {
+              openBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                if (search.disabled) return;
+                setAllVisible();
+                filterOptions(search.value);
+                togglePanel();
+              });
+            }
+
+            if (clearBtn) {
+              clearBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                clearLocation();
+                search.focus();
+              });
+            }
+
+            if (list) {
+              list.addEventListener("click", function (e) {
+                var li = e.target && e.target.closest("li[role=option]");
+                if (!li || li.hidden) return;
+                e.preventDefault();
+                var lid = li.getAttribute("data-id");
+                if (lid) {
+                  hidden.value = lid;
+                  search.value = (li.textContent || "").trim();
+                }
+                setAllVisible();
+                hidePanel();
+              });
+            }
+
+            document.addEventListener("click", function (e) {
+              var combo = document.getElementById("user-location-combo");
+              if (combo && !combo.contains(e.target)) {
+                hidePanel();
+              }
+            });
+
+            window.userLocationComboReset = function () {
+              clearLocation();
+            };
+
+            window.userLocationComboSet = function (locationId, label) {
+              if (locationId) {
+                hidden.value = String(locationId);
+                search.value = label || "";
+              } else {
+                clearLocation();
+              }
+              setAllVisible();
+            };
+          }
+
+          function wireLoadUser() {
+            document.querySelectorAll(".js-load-user").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                var id = btn.getAttribute("data-id") || "";
+                document.getElementById("user-pk").value = id;
+                var disp = document.querySelector("[data-display-id]");
+                if (disp) {
+                  disp.value = id ? id : "Auto generated";
+                }
+                document.getElementById("username").value = btn.getAttribute("data-username") || "";
+                document.getElementById("full-name").value = btn.getAttribute("data-full-name") || "";
+                document.getElementById("user-code").value = btn.getAttribute("data-user-code") || "";
+                document.getElementById("email").value = btn.getAttribute("data-email") || "";
+                document.getElementById("job-description").value =
+                    btn.getAttribute("data-job-description") || "";
+                var locId = btn.getAttribute("data-location-id");
+                var locLabel = btn.getAttribute("data-location-label");
+                if (window.userLocationComboSet) {
+                  window.userLocationComboSet(
+                    locId && locId !== "null" && locId !== "" ? locId : null,
+                    locLabel && locLabel !== "null" ? locLabel : ""
+                  );
+                }
+                document.getElementById("expiry-date").value = btn.getAttribute("data-expiry") || "";
+                var amt = btn.getAttribute("data-amount");
+                document.getElementById("amount-limit").value =
+                    amt && amt !== "null" ? amt : "";
+                var roleId = btn.getAttribute("data-role-id");
+                document.getElementById("user-role").value = roleId && roleId !== "null" ? roleId : "";
+                setSelectValue("voucher-reversal", btn.getAttribute("data-voucher"));
+                setSelectValue("posted-maintenance-edit", btn.getAttribute("data-posted"));
+                setSelectValue("old-rate-booking", btn.getAttribute("data-oldrate"));
+                var active = document.getElementById("active");
+                if (active) {
+                  active.checked = btn.getAttribute("data-active") === "true";
+                }
+                var pw = document.getElementById("password");
+                if (pw) {
+                  pw.value = "";
+                }
+                var sig = document.getElementById("signature");
+                if (sig) {
+                  sig.value = "";
+                  sig.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+                var status = document.getElementById("signature-file-status");
+                var drop = document.getElementById("signature-drop");
+                if (status && drop) {
+                  if (btn.getAttribute("data-has-signature") === "true") {
+                    status.textContent =
+                        "Existing signature on file. Upload a new file to replace it when you click Update.";
+                    status.classList.add("is-selected");
+                    drop.classList.add("file-drop--has-file");
+                  }
+                }
+              });
+            });
+          }
+
+          var newBtn = document.getElementById("btn-new-user");
+          if (newBtn) {
+            newBtn.addEventListener("click", function () {
+              var form = document.getElementById("user-entry-form");
+              if (form) {
+                form.reset();
+              }
+              document.getElementById("user-pk").value = "";
+              var disp = document.querySelector("[data-display-id]");
+              if (disp) {
+                disp.value = "Auto generated";
+              }
+              if (window.userLocationComboReset) {
+                window.userLocationComboReset();
+              }
+              var sig = document.getElementById("signature");
+              if (sig) {
+                sig.dispatchEvent(new Event("change", { bubbles: true }));
+              }
+            });
+          }
+
+          wireUserLocationCombobox();
+          wireLoadUser();
+        })();
+      </script>
+
       <div class="toolbar" style="margin-top:1.25rem;margin-bottom:0">
         <button type="submit" form="user-entry-form" class="btn btn-primary">Save</button>
-        <button type="button" class="btn btn-ghost">Update</button>
-        <button type="button" class="btn btn-ghost">Delete</button>
+        <button type="submit" form="user-entry-form" class="btn btn-ghost" th:formaction="@{/admin/setup/users/update}" formmethod="post">Update</button>
+        <button type="submit" form="user-entry-form" class="btn btn-ghost" th:formaction="@{/admin/setup/users/delete}" formmethod="post"
+                onclick="return confirm('Delete this user? This cannot be undone.');">Delete</button>
         <button type="reset" form="user-entry-form" class="btn btn-ghost">Reset</button>
+        <button type="button" class="btn btn-ghost" id="btn-new-user">New user</button>
       </div>
+      <p class="field-hint" style="margin-top:0.75rem">Update and Delete use the User ID from the hidden field (set when you click Edit).</p>
     </div>
   </div>
 </th:block>
